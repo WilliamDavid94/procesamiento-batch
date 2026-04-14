@@ -1,0 +1,30 @@
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, avg, desc
+
+spark = SparkSession.builder.appName("Saber11_Online_API").getOrCreate()
+
+# URL de la API original (formato JSON)
+url_api = "https://www.datos.gov.co/resource/tagd-tfeb.json"
+
+try:
+    # Spark puede leer directamente desde una URL si el entorno lo permite,
+    # o puedes usar la librería requests para mayor estabilidad:
+    import requests
+    data = requests.get(url_api).json()
+    df = spark.createDataFrame(data)
+
+    # Limpieza y EDA (Análisis Exploratorio)
+    # En este dataset las columnas son 'departamento' y 'puntaje_global_promedio'
+    df_final = df.select(
+        col("departamento"),
+        col("puntaje_global_promedio").cast("float")
+    ).orderBy(desc("puntaje_global_promedio"))
+
+    print("\n--- RESULTADOS CARGADOS DESDE API ORIGINAL ---")
+    df_final.show(20)
+
+except Exception as e:
+    print(f"Error al conectar con la API: {e}")
+
+finally:
+    spark.stop()
